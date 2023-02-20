@@ -19,6 +19,8 @@
             <property name="hibernate.jdbc.batch_size" value="10"/> <!-- 지정된 사이즈 만큼 SQL을 모아서 DB에 한꺼번에 보냄 -->
             <!-- 주의!!! 절대 운영 서버에 아래의 옵션을 키면 안됨!!! 특히 create, create-drop, update!!! -->
             <property name="hibernate.hbm2ddl.auto" value="create" />
+            <!-- @BatchSize의 Global 설정 (1000 이하로 설정하는 것을 권장) -->
+            <property name="hibernate.default_batch_fetch_size" value="100" /> <!-- N+1 문제에 대한 제한을 둠 (테이블 수만큼 쿼리가 나오게) -->
         </properties>
     </persistence-unit>
 </persistence>

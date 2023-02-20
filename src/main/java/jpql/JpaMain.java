@@ -1,6 +1,7 @@
 package jpql;
 
 import javax.persistence.*;
+import java.util.Collection;
 import java.util.List;
 
 public class JpaMain {
@@ -172,30 +173,145 @@ public class JpaMain {
             /**
              * JPQL 기본 함수
              */
-            Member member1 = new Member();
-            member1.setUsername("관리자1");
-            em.persist(member1);
-
-            Member member2 = new Member();
-            member2.setUsername("관리자1");
-            em.persist(member2);
-
-            em.flush();
-            em.clear();
-
             // String query = "select concat('a', 'b') from Member m";
             // String query = "select substring(m.username, 2, 3) from Member m";
             // String query = "select locate('de', 'abcde') from Member m"; // 4(Integer) return
             // String query = "select size(t.members) from Team t"; // collection size return
             // String query = "select index(t.members) from Team t"; // collection 위치 값을 구할 때
-            String query = "select function('group_concat', m.username) from Member m";
+            // String query = "select function('group_concat', m.username) from Member m";
+            //
+            // List<String> result = em.createQuery(query, String.class)
+            //         .getResultList();
+            //
+            // for (String s : result) {
+            //     System.out.println("s = " + s);
+            // }
 
-            List<String> result = em.createQuery(query, String.class)
-                    .getResultList();
+            /**
+             * 경로표현식 테스트
+             */
+            // Team team = new Team();
+            // em.persist(team);
+            //
+            // Member member1 = new Member();
+            // member1.setUsername("관리자1");
+            // member1.setTeam(team);
+            // em.persist(member1);
+            //
+            // Member member2 = new Member();
+            // member2.setUsername("관리자1");
+            // member2.setTeam(team);
+            // em.persist(member2);
+            //
+            // em.flush();
+            // em.clear();
 
-            for (String s : result) {
-                System.out.println("s = " + s);
-            }
+            // 상태 필드, 경로 탐색의 끝으로 더 이상 탐색이 안됨
+            // String query = "select m.username from Member m";
+
+            // 아래와 같은 묵시적 조인은 사용하지 말자!!!
+            // 단일 값 연관 경로, 묵시적으로 Member와 Team의 inner join이 발생하며, 더 탐색이 가능함 (권장되지 않는 방법)
+            // String query = "select m.team from Member m";
+            // 컬렉션 값 연관 경로, 묵시적으로 inner join이 발생하지만, 탐색을 더 이상 하지 못 함 (탐색을 더 하려면 명시적 join을 해야함)
+            // String query = "select t.members from Team t";
+            //
+            // List<Collection> result = em.createQuery(query, Collection.class)
+            //         .getResultList();
+            //
+            // System.out.println("result = " + result);
+
+            Team teamA = new Team();
+            teamA.setName("팀A");
+            em.persist(teamA);
+
+            Team teamB = new Team();
+            teamB.setName("팀B");
+            em.persist(teamB);
+
+            Member member1 = new Member();
+            member1.setUsername("회원1");
+            member1.setTeam(teamA);
+            em.persist(member1);
+
+            Member member2 = new Member();
+            member2.setUsername("회원2");
+            member2.setTeam(teamA);
+            em.persist(member2);
+
+            Member member3 = new Member();
+            member3.setUsername("회원3");
+            member3.setTeam(teamB);
+            em.persist(member3);
+
+            em.flush();
+            em.clear();
+
+            /**
+             * 페치 조인 테스트
+             */
+            // 기존 쿼리
+            // String query = "select m from Member m";
+            // 회원1, 팀A(SQL)
+            // 회원2, 팀A(영속성 컨텍스트(1차 캐시))
+            // 회원3, 팀B(SQL)
+            // 회원 100명이면...? N명이면..? N+1 문제 발생
+
+            // 엔티티 페치 조인 => member와 team을 한 번에 끌고 옴 (쿼리 한 번으로 끝!!!)
+            // String query = "select m from Member m join fetch m.team";
+
+            // 컬렉션 페치 조인 => 일대다 관계일 때 주의! 중복 데이터가 생길 수 있음 (다대일 관계는 괜찮음)
+            // String query = "select t from Team t join fetch t.members";
+            // 컬렉션 페치 조인 => 중복 제거 (DISTINCT), SQL에서 중복 제거가 실패하더라도 애플리케이션 단에서 중복 제거 시도
+            // String query = "select distinct t from Team t join fetch t.members";
+            //
+            // List<Team> result = em.createQuery(query, Team.class)
+            //         .getResultList();
+            //
+            // for (Team team : result) {
+            //     System.out.println("team = " + team.getName() + ", " + team.getMembers().size());
+            //     for (Member member : team.getMembers()) {
+            //         System.out.println("=> member = " + member);
+            //     }
+            // }
+
+            /**
+             * 엔티티 직접 사용 테스트
+             */
+            // 엔티티 직접 사용 - 기본키 값
+            // String query = "select m from Member m where m.id = :memberId";
+
+            // 엔티티 직접 사용 - 기본키 값
+            // String query = "select m from Member m where m.team = :team";
+            //
+            // List<Member> members = em.createQuery(query, Member.class)
+            //         .setParameter("team", teamA)
+            //         .getResultList();
+            //
+            // for (Member member : members) {
+            //     System.out.println("member = " + member);
+            // }
+
+            /**
+             * Named 쿼리 테스트
+             */
+            // List<Member> resultList = em.createNamedQuery("Member.findByUsername", Member.class)
+            //         .setParameter("username", "회원1")
+            //         .getResultList();
+            //
+            // for (Member member : resultList) {
+            //     System.out.println("member = " + member);
+            // }
+
+            /**
+             * 벌크 연산 테스트
+             */
+            // 영속성 컨텍스트를 무시하고 바로 쿼리를 하기 때문에, 아래의 update 내용은 영속성 컨텍스트에 반영되어 있지 않음
+            int resultCount = em.createQuery("update Member m set m.age = 20")
+                    .executeUpdate(); // flush 자동 호출
+
+            em.clear(); // 따라서, 벌크 연산 후 clear(영속성 컨텍스트 초기화)는 꼭 해주자!!!
+
+            System.out.println("resultCount = " + resultCount);
 
             tx.commit();
         } catch (Exception e) {
